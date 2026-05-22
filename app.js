@@ -33,6 +33,8 @@ const achievePanel = document.getElementById('achievementsPanel');
 const commentaryEl = document.getElementById('commentary');
 const tunaBtn      = document.getElementById('tunaBtn');
 const yarnBtn      = document.getElementById('yarnBtn');
+const gegeeOverlay = document.getElementById('gegeeOverlay');
+const gegeeClose   = document.getElementById('gegeeClose');
 
 // ── State ──
 let petsCount      = 0;
@@ -507,6 +509,28 @@ yarnBtn.addEventListener('click', () => {
 });
 
 // ─────────────────────────────────────────────
+//  GEGEE SECRET MESSAGE
+// ─────────────────────────────────────────────
+function showGegeeMessage() {
+  gegeeOverlay.classList.add('active');
+  gsap.to('#gegeeCard', {
+    opacity: 1, scale: 1, y: 0,
+    duration: 0.55, delay: 0.5, ease: 'back.out(2)',
+  });
+}
+
+gegeeClose.addEventListener('click', () => {
+  gsap.to('#gegeeCard', {
+    opacity: 0, scale: 0.9, y: -12,
+    duration: 0.35, ease: 'power2.in',
+    onComplete: () => gegeeOverlay.classList.remove('active'),
+  });
+});
+gegeeOverlay.addEventListener('click', e => {
+  if (e.target === gegeeOverlay) gegeeClose.click();
+});
+
+// ─────────────────────────────────────────────
 //  KONAMI CODE  ↑↑↓↓←→←→BA
 // ─────────────────────────────────────────────
 const KONAMI = ['ArrowUp','ArrowUp','ArrowDown','ArrowDown','ArrowLeft','ArrowRight','ArrowLeft','ArrowRight','b','a'];
@@ -519,9 +543,10 @@ document.addEventListener('keydown', e => {
       konamiIdx = 0;
       reactKonami();
       playKonami();
-      commentaryEl.textContent = '"...how did you know that."';
+      commentaryEl.textContent = '"hi gegee ♡"';
       gsap.fromTo(commentaryEl, { opacity: 0 }, { opacity: 1, duration: 0.4 });
       triggerUnlock('konami');
+      showGegeeMessage();
       for (let i = 0; i < 12; i++) {
         setTimeout(() => spawnBurst(
           Math.random() * window.innerWidth,
