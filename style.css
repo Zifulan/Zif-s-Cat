@@ -1,0 +1,528 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --cream:  #f5f0e8;
+  --card:   #fffdf7;
+  --sand:   #e8dcc8;
+  --amber:  #c8922a;
+  --amber2: #e4a93c;
+  --rust:   #9b3d1c;
+  --brown:  #6b3f1e;
+  --ink:    #1a1209;
+  --muted:  #7a6a52;
+  --night-bg:   #1a1108;
+  --night-card: #241a0c;
+  --night-sand: #3a2e1c;
+  --night-muted:#a08060;
+}
+
+html, body { height: 100%; }
+
+body {
+  min-height: 100%;
+  font-family: 'Gowun Batang', serif;
+  background: var(--cream);
+  color: var(--ink);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 48px 20px;
+  position: relative; overflow-x: hidden;
+  transition: background 1.2s ease, color 1.2s ease;
+  cursor: none; /* replaced by paw trail */
+}
+
+/* ── Paw trail cursor ── */
+#pawCursor {
+  position: fixed; pointer-events: none; z-index: 9999;
+  font-size: 20px; transform: translate(-50%,-50%);
+  transition: transform 0.08s ease;
+}
+.paw-trail {
+  position: fixed; pointer-events: none; z-index: 9998;
+  font-size: 14px; opacity: 0.55;
+  animation: pawFade 0.7s ease-out forwards;
+}
+@keyframes pawFade {
+  from { opacity: 0.55; transform: translate(-50%,-50%) scale(1); }
+  to   { opacity: 0;    transform: translate(-50%,-50%) scale(0.4); }
+}
+
+/* Night mode */
+body.night { background: var(--night-bg); color: #d4b896; }
+body.night .card        { background: var(--night-card); border-color: var(--night-sand); }
+body.night .bubble      { background: #1e1508; border-color: var(--night-sand); }
+body.night .bubble::after  { border-bottom-color: #1e1508; }
+body.night .bubble::before { border-bottom-color: var(--night-sand); }
+body.night .meta-tag    { background: var(--night-sand); color: #c8a06a; }
+body.night .btn         { background: #2e1f0a; border-color: #c8922a; color: #f5e8c8; }
+body.night .stats       { border-color: var(--night-sand); }
+body.night .stat + .stat { border-color: var(--night-sand); }
+body.night #purrLabel   { background: var(--night-card); border-color: var(--night-sand); }
+body.night .header-sub  { color: var(--night-muted); }
+body.night .stat-lbl    { color: var(--night-muted); }
+body.night #stateBadge  { color: var(--night-muted); }
+body.night .pet-hint    { color: var(--night-muted); }
+body.night .fact-text   { color: #d4b896; }
+body.night .btn-copy    { color: var(--night-muted); border-color: var(--night-sand); }
+body.night .fav-item    { border-color: var(--night-sand); background: var(--night-card); }
+body.night #favPanel    { border-color: var(--night-sand); }
+body.night #achievementsPanel { border-color: var(--night-sand); }
+body.night .achievement { border-color: var(--night-sand); }
+body.night .commentary  { color: var(--night-muted); }
+
+body::before {
+  content: ''; position: fixed; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+  pointer-events: none; z-index: 0;
+}
+body::after {
+  content: ''; position: fixed;
+  top: 20px; left: 20px; right: 20px; bottom: 20px;
+  border: 1px solid rgba(200,146,42,0.22);
+  pointer-events: none; z-index: 99;
+  transition: border-color 1.2s ease;
+}
+body.night::after { border-color: rgba(200,146,42,0.12); }
+
+.doodles { position: fixed; inset: 0; pointer-events: none; z-index: 1; overflow: hidden; }
+.doodle  { position: absolute; opacity: 0; animation: floatDoodle linear infinite; }
+@keyframes floatDoodle {
+  0%   { opacity: 0; transform: translateY(10px) rotate(-8deg); }
+  15%  { opacity: 0.5; } 85% { opacity: 0.5; }
+  100% { opacity: 0; transform: translateY(-80px) rotate(8deg); }
+}
+
+#nightToggle {
+  position: fixed; top: 36px; right: 36px; z-index: 98;
+  font-family: 'Gaegu', cursive; font-size: 11px;
+  letter-spacing: 0.15em; text-transform: uppercase;
+  color: var(--muted); background: none; border: 1px solid var(--sand);
+  padding: 4px 12px; border-radius: 999px; cursor: pointer;
+  transition: all 0.3s ease;
+}
+#nightToggle:hover { border-color: var(--amber); color: var(--amber); }
+body.night #nightToggle { color: var(--night-muted); border-color: var(--night-sand); }
+
+/* ── Header ── */
+.header {
+  position: relative; z-index: 2; text-align: center;
+  margin-bottom: 28px; animation: riseIn 0.7s ease both;
+  /* Stable so card resize doesn't affect header */
+  width: 100%; max-width: 640px;
+}
+.header-eyebrow {
+  font-family: 'Gaegu', cursive; font-size: 13px;
+  color: var(--amber); letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 6px;
+}
+.header-title {
+  font-family: 'Gaegu', cursive; font-size: clamp(2.4rem, 7vw, 3.8rem);
+  font-weight: 700; color: var(--ink); line-height: 1;
+  display: inline-block; position: relative; transition: color 1.2s ease;
+}
+body.night .header-title { color: #e8c898; }
+.header-title::after {
+  content: ''; display: block; height: 3px;
+  background: linear-gradient(90deg, transparent, var(--amber) 20%, var(--amber2) 50%, var(--amber) 80%, transparent);
+  border-radius: 2px; margin-top: 4px; animation: shimmer 3s ease-in-out infinite;
+}
+@keyframes shimmer {
+  0%,100% { opacity: 0.6; transform: scaleX(0.9); }
+  50%      { opacity: 1;   transform: scaleX(1); }
+}
+.header-sub { font-family: 'Gaegu', cursive; font-size: 15px; color: var(--muted); margin-top: 8px; transition: color 1.2s; }
+
+/* ── Card ── */
+.card {
+  position: relative; z-index: 2; max-width: 640px; width: 100%;
+  background: var(--card); border: 1.5px solid var(--sand); border-radius: 4px;
+  padding: 36px 52px 44px;
+  box-shadow: 5px 5px 0 var(--sand), 10px 10px 0 rgba(200,146,42,0.08);
+  animation: riseIn 0.8s ease 0.1s both;
+  transition: background 1.2s ease, border-color 1.2s ease;
+  /* Prevent width jumping */
+  box-sizing: border-box;
+}
+.corner { position: absolute; width: 22px; height: 22px; }
+.corner-tl { top:-1px; left:-1px;   border-top:2.5px solid var(--amber); border-left:2.5px solid var(--amber); }
+.corner-tr { top:-1px; right:-1px;  border-top:2.5px solid var(--amber); border-right:2.5px solid var(--amber); }
+.corner-bl { bottom:-1px; left:-1px;  border-bottom:2.5px solid var(--amber); border-left:2.5px solid var(--amber); }
+.corner-br { bottom:-1px; right:-1px; border-bottom:2.5px solid var(--amber); border-right:2.5px solid var(--amber); }
+
+/* ── Cat ── */
+.cat-section {
+  display: flex; flex-direction: column; align-items: center;
+  margin-bottom: 4px; position: relative;
+  padding-top: 32px; /* room for purrLabel floating above catWrap */
+}
+.pet-hint {
+  font-family: 'Gaegu', cursive; font-size: 12px; color: var(--muted);
+  letter-spacing: 0.12em; margin-bottom: 2px;
+  transition: opacity 0.8s ease, color 1.2s ease;
+}
+.pet-hint.gone { opacity: 0; pointer-events: none; }
+
+/* Annoyed shake */
+@keyframes hiss {
+  0%,100% { transform: translateX(0); }
+  15%  { transform: translateX(-6px) rotate(-2deg); }
+  35%  { transform: translateX(6px)  rotate(2deg); }
+  55%  { transform: translateX(-5px) rotate(-1.5deg); }
+  75%  { transform: translateX(5px)  rotate(1.5deg); }
+}
+.hissing { animation: hiss 0.45s ease both; }
+
+#catWrap {
+  position: relative; width: 260px; height: 260px;
+  cursor: none;
+  user-select: none;
+  /* Allow dream bubbles to float above but clip sides */
+  overflow: visible;
+}
+#lottieContainer { width: 100%; height: 100%; }
+
+#purrLabel {
+  font-family: 'Gaegu', cursive; font-size: 13px; color: var(--amber);
+  background: var(--card); border: 1px solid var(--sand); border-radius: 10px;
+  padding: 2px 12px; white-space: nowrap; box-shadow: 2px 2px 0 var(--sand);
+  position: absolute; top: -28px; left: 50%; transform: translateX(-50%);
+  opacity: 0; pointer-events: none; z-index: 10;
+  transition: background 1.2s ease, border-color 1.2s ease;
+}
+#sleepLabel {
+  font-family: 'Gaegu', cursive; font-size: 13px; color: var(--muted);
+  position: absolute; top: -24px; right: 0;
+  opacity: 0; pointer-events: none; z-index: 10; letter-spacing: 0.1em;
+}
+
+/* Hidden tuna 🐟 */
+#tunaBtn {
+  position: absolute; bottom: 12px; left: 8px;
+  font-size: 11px; opacity: 0; background: none; border: none;
+  cursor: pointer; transition: opacity 0.4s ease; z-index: 20;
+  font-family: 'Gaegu', cursive; color: var(--muted); letter-spacing: 0.1em;
+}
+#tunaBtn:hover { opacity: 1 !important; }
+#tunaBtn.visible { opacity: 0.25; }
+
+/* Hidden yarn 🧶 */
+#yarnBtn {
+  position: absolute; bottom: 12px; right: 8px;
+  font-size: 11px; opacity: 0; background: none; border: none;
+  cursor: pointer; transition: opacity 0.4s ease; z-index: 20;
+  font-family: 'Gaegu', cursive; color: var(--muted); letter-spacing: 0.1em;
+}
+#yarnBtn:hover { opacity: 1 !important; }
+#yarnBtn.visible { opacity: 0.25; }
+
+/* Dream bubbles */
+.dream-bubble {
+  position: absolute;
+  pointer-events: none;
+  z-index: 15;
+  filter: drop-shadow(0 1px 3px rgba(0,0,0,0.12));
+}
+
+/* Cat commentary */
+.commentary {
+  font-family: 'Gaegu', cursive; font-size: 11px; color: var(--muted);
+  letter-spacing: 0.1em; text-align: center; margin-top: 2px; margin-bottom: 4px;
+  min-height: 16px; font-style: italic; transition: color 1.2s ease;
+}
+
+/* Snore overlay */
+#snoreOverlay {
+  position: fixed; inset: 0; z-index: 50;
+  background: rgba(26,18,9,0); pointer-events: none;
+  transition: background 2s ease;
+}
+#snoreOverlay.active { background: rgba(26,18,9,0.55); pointer-events: all; }
+#snoreMsg {
+  position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%);
+  font-family: 'Gaegu', cursive; font-size: 1.1rem; color: #f5e8c8;
+  letter-spacing: 0.15em; text-transform: uppercase; text-align: center;
+  opacity: 0; z-index: 51; pointer-events: none; line-height: 2;
+}
+
+#stateBadge {
+  font-family: 'Gaegu', cursive; font-size: 11px;
+  color: var(--muted); letter-spacing: 0.15em;
+  text-transform: uppercase; text-align: center;
+  margin-top: 6px; margin-bottom: 2px; height: 16px;
+  transition: color 1.2s ease;
+}
+
+.heart-particle {
+  position: absolute; pointer-events: none;
+  font-family: 'Gaegu', cursive; opacity: 0; top: 60px; left: 50%;
+}
+
+/* Achievement toast */
+#achievementToast {
+  position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%);
+  font-family: 'Gaegu', cursive; font-size: 14px;
+  background: var(--ink); color: var(--cream);
+  border: 1.5px solid var(--amber); border-radius: 4px;
+  padding: 10px 22px; box-shadow: 3px 3px 0 var(--amber);
+  opacity: 0; pointer-events: none; z-index: 200;
+  white-space: nowrap; letter-spacing: 0.1em;
+}
+
+/* ── Bubble ── */
+.bubble-section { position: relative; margin-bottom: 16px; }
+.bubble-label {
+  font-family: 'Gaegu', cursive; font-size: 11px; letter-spacing: 0.18em;
+  text-transform: uppercase; color: var(--amber); text-align: center;
+  margin-bottom: 16px; display: flex; align-items: center; gap: 10px;
+}
+.bubble-label::before, .bubble-label::after { content: ''; flex: 1; height: 1px; background: var(--sand); }
+body.night .bubble-label::before, body.night .bubble-label::after { background: var(--night-sand); }
+
+.bubble {
+  background: var(--cream); border: 1.5px solid var(--sand); border-radius: 18px;
+  padding: 22px 28px; position: relative;
+  min-height: 110px; display: flex; align-items: center; justify-content: center;
+  transition: background 1.2s ease, border-color 1.2s ease, min-height 0.4s ease;
+}
+.bubble::before {
+  content: ''; position: absolute; top: -13px; left: 50%; transform: translateX(-50%);
+  border: 8px solid transparent; border-bottom-color: var(--sand);
+}
+.bubble::after {
+  content: ''; position: absolute; top: -10px; left: 50%; transform: translateX(-50%);
+  border: 7px solid transparent; border-bottom-color: var(--cream);
+  transition: border-bottom-color 1.2s ease;
+}
+
+.bubble-actions {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-top: 8px;
+}
+.btn-copy, .btn-fav {
+  font-family: 'Gaegu', cursive; font-size: 11px; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--muted);
+  background: none; border: 1px solid var(--sand); border-radius: 999px;
+  padding: 3px 12px; cursor: pointer;
+  transition: color 0.2s, border-color 0.2s;
+}
+.btn-copy:hover, .btn-fav:hover { color: var(--amber); border-color: var(--amber); }
+.btn-copy.copied, .btn-fav.saved { color: var(--amber); border-color: var(--amber); }
+
+.fact-keyword { color: var(--amber); font-weight: 700; }
+
+.fact-text {
+  font-family: 'Gowun Batang', serif; font-size: clamp(0.95rem, 2.2vw, 1.1rem);
+  line-height: 1.75; text-align: center; color: var(--ink);
+  transition: opacity 0.22s ease, transform 0.22s ease, color 1.2s ease;
+  /* Prevent layout jump by reserving space */
+  min-height: 3.5em;
+  display: flex; align-items: center; justify-content: center;
+  flex-direction: column;
+}
+.fact-text.loading  { opacity: 0.2; transform: scale(0.97); }
+.fact-text.revealed { animation: popIn 0.38s cubic-bezier(.34,1.46,.64,1) forwards; }
+@keyframes popIn {
+  from { opacity: 0; transform: scale(0.94) translateY(6px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* ── Meta ── */
+.meta-row {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 28px; font-family: 'Gaegu', cursive; font-size: 12px;
+  color: var(--muted); letter-spacing: 0.1em;
+}
+.meta-tag {
+  background: var(--sand); color: var(--brown); padding: 3px 12px;
+  border-radius: 999px; font-size: 11px; font-weight: 700; letter-spacing: 0.08em;
+  transition: background 1.2s ease, color 1.2s ease;
+}
+
+/* ── Button ── */
+.btn {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  width: 100%; padding: 15px 32px;
+  border: 1.5px solid var(--ink); border-radius: 2px;
+  background: var(--ink); color: var(--cream);
+  font-family: 'Gaegu', cursive; font-size: 1.15rem; letter-spacing: 0.12em;
+  cursor: pointer; box-shadow: 4px 4px 0 var(--amber);
+  transition: transform 0.14s ease, box-shadow 0.14s ease, background 1.2s ease;
+}
+.btn:hover:not(:disabled) { transform: translate(-2px,-2px); box-shadow: 6px 6px 0 var(--amber); }
+.btn:active:not(:disabled) { transform: translate(2px,2px); box-shadow: 1px 1px 0 var(--amber); }
+.btn:disabled { opacity: 0.55; cursor: not-allowed; }
+.btn-icon { font-size: 1.3rem; transition: transform 0.35s cubic-bezier(.34,1.56,.64,1); display: inline-block; }
+.btn:hover .btn-icon { transform: rotate(-18deg) scale(1.25); }
+.btn-spinner {
+  width: 16px; height: 16px; border: 2.5px solid rgba(245,240,232,0.3);
+  border-top-color: var(--cream); border-radius: 50%;
+  animation: spin 0.65s linear infinite; display: none;
+}
+.btn.fetching .btn-icon { display: none; }
+.btn.fetching .btn-spinner { display: block; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Stats ── */
+.stats {
+  display: flex; margin-top: 22px;
+  border-top: 1px solid var(--sand); padding-top: 18px;
+  transition: border-color 1.2s ease;
+}
+.stat { flex: 1; text-align: center; padding: 0 8px; }
+.stat + .stat { border-left: 1px solid var(--sand); transition: border-color 1.2s ease; }
+.stat-val {
+  font-family: 'Gaegu', cursive; font-size: 1.6rem;
+  font-weight: 700; color: var(--amber); line-height: 1;
+}
+.stat-lbl {
+  font-family: 'Gaegu', cursive; font-size: 11px;
+  text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-top: 2px;
+  transition: color 1.2s ease;
+}
+
+/* ── Favourites panel ── */
+#favBtn, #achievementsBtn {
+  font-family: 'Gaegu', cursive; font-size: 11px; letter-spacing: 0.15em;
+  text-transform: uppercase; color: var(--muted);
+  background: none; border: none; cursor: pointer;
+  display: inline-block; transition: color 0.2s;
+  padding: 0 8px;
+}
+#favBtn:hover, #achievementsBtn:hover { color: var(--amber); }
+.panel-btns {
+  margin-top: 14px; display: flex; justify-content: center;
+  gap: 4px; align-items: center;
+}
+.panel-btns span { color: var(--sand); font-size: 12px; }
+
+#favPanel, #achievementsPanel {
+  margin-top: 12px; display: none;
+  border-top: 1px solid var(--sand); padding-top: 14px;
+}
+#favPanel.open, #achievementsPanel.open { display: block; }
+
+/* Fav list */
+.fav-list { display: flex; flex-direction: column; gap: 8px; max-height: 220px; overflow-y: auto; }
+.fav-item {
+  font-family: 'Gowun Batang', serif; font-size: 0.88rem; color: var(--ink);
+  border: 1px solid var(--sand); border-radius: 10px; padding: 10px 14px;
+  background: var(--cream); position: relative; line-height: 1.5;
+  transition: background 1.2s, border-color 1.2s, color 1.2s;
+}
+.fav-item .fav-remove {
+  position: absolute; top: 6px; right: 10px;
+  font-family: 'Gaegu', cursive; font-size: 10px; color: var(--muted);
+  background: none; border: none; cursor: pointer; letter-spacing: 0.1em;
+}
+.fav-item .fav-remove:hover { color: var(--rust); }
+.fav-empty {
+  font-family: 'Gaegu', cursive; font-size: 12px; color: var(--muted);
+  text-align: center; letter-spacing: 0.12em; padding: 12px 0;
+}
+
+/* Achievements */
+.achievement-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px;
+}
+.achievement {
+  text-align: center; padding: 10px 6px; border: 1px solid var(--sand);
+  border-radius: 8px; opacity: 0.3; transition: opacity 0.4s, border-color 0.4s;
+}
+.achievement.unlocked { opacity: 1; border-color: var(--amber); }
+.achievement-icon { font-size: 1.5rem; }
+.achievement-name {
+  font-family: 'Gaegu', cursive; font-size: 10px; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--muted); margin-top: 4px;
+}
+.achievement.unlocked .achievement-name { color: var(--amber); }
+
+/* ── Footer ── */
+.footer {
+  margin-top: 24px; font-family: 'Gaegu', cursive; font-size: 13px;
+  color: var(--muted); letter-spacing: 0.1em; text-align: center;
+  position: relative; z-index: 2; animation: riseIn 0.8s ease 0.3s both;
+}
+.footer a { color: var(--amber); text-decoration: none; }
+
+/* ── Burst ── */
+.burst {
+  position: fixed; pointer-events: none; z-index: 9997; font-size: 20px;
+  animation: burstAnim 0.65s ease-out forwards;
+}
+@keyframes burstAnim {
+  0%   { opacity: 1; transform: translate(-50%,-50%) scale(0.4); }
+  55%  { opacity: 1; transform: translate(-50%,-50%) scale(1.3); }
+  100% { opacity: 0; transform: translate(-50%,-50%) scale(1.7); }
+}
+@keyframes riseIn {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 600px) {
+  .card { padding: 24px 16px 28px; }
+  .bubble { padding: 16px 14px; }
+  body::after { top: 10px; left: 10px; right: 10px; bottom: 10px; }
+  #nightToggle { top: 18px; right: 18px; font-size: 10px; padding: 3px 9px; }
+
+  /* Cat section: tighten up */
+  .cat-section { margin-bottom: 2px; }
+  #catWrap { width: 200px; height: 200px; }
+
+  /* Pet hint above cat — smaller */
+  .pet-hint { font-size: 10px; margin-bottom: 1px; }
+
+  /* Purr label — move inside cat, smaller */
+  #purrLabel { font-size: 11px; padding: 1px 8px; top: 4px; }
+
+  /* Sleep label — reposition so it doesn't overlap cat */
+  #sleepLabel { font-size: 11px; top: 4px; right: 8px; }
+
+  /* State badge smaller */
+  #stateBadge { font-size: 10px; margin-top: 1px; margin-bottom: 1px; }
+
+  /* Commentary smaller */
+  .commentary { font-size: 10px; margin-top: 1px; }
+
+  /* Hide tuna/yarn on mobile entirely — they cause layout issues */
+  /* Player can use triple-tap header for Konami instead */
+  #tunaBtn, #yarnBtn { display: none; }
+
+  /* Dream bubbles — constrain so they don't go outside cat wrap */
+  .dream-bubble { font-size: 12px !important; }
+
+  /* Bubble section */
+  .bubble-section { margin-bottom: 12px; }
+  .bubble-label { margin-bottom: 10px; font-size: 10px; }
+
+  /* Bubble actions row */
+  .bubble-actions { flex-direction: row; gap: 6px; }
+  .btn-copy, .btn-fav { font-size: 10px; padding: 2px 10px; }
+
+  /* Meta row */
+  .meta-row { margin-bottom: 16px; font-size: 10px; }
+  .meta-tag { font-size: 10px; padding: 2px 10px; }
+
+  /* Button */
+  .btn { padding: 13px 20px; font-size: 1rem; }
+
+  /* Stats */
+  .stats { padding-top: 14px; margin-top: 16px; }
+  .stat-val { font-size: 1.3rem; }
+  .stat-lbl { font-size: 10px; }
+
+  /* Panel buttons */
+  .panel-btns { font-size: 10px; gap: 2px; }
+  #favBtn, #achievementsBtn { font-size: 10px; }
+
+  /* Achievement grid */
+  .achievement-grid { grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 6px; }
+  .achievement { padding: 7px 4px; }
+  .achievement-icon { font-size: 1.2rem; }
+  .achievement-name { font-size: 9px; }
+
+  /* Achievement toast */
+  #achievementToast { font-size: 12px; padding: 8px 16px; bottom: 24px; }
+
+  /* Footer */
+  .footer { font-size: 11px; margin-top: 18px; }
+}
