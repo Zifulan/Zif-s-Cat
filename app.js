@@ -513,21 +513,28 @@ yarnBtn.addEventListener('click', () => {
 // ─────────────────────────────────────────────
 function showGegeeMessage() {
   gegeeOverlay.classList.add('active');
-  gsap.to('#gegeeCard', {
-    opacity: 1, scale: 1, y: 0,
-    duration: 0.55, delay: 0.5, ease: 'back.out(2)',
-  });
+  gsap.fromTo(gegeeOverlay,
+    { background: 'rgba(26,18,9,0)' },
+    { background: 'rgba(26,18,9,0.65)', duration: 0.6, ease: 'power2.out' }
+  );
+  gsap.fromTo('#gegeeCard',
+    { opacity: 0, scale: 0.88, y: 16 },
+    { opacity: 1, scale: 1, y: 0, duration: 0.55, delay: 0.5, ease: 'back.out(2)' }
+  );
 }
 
-gegeeClose.addEventListener('click', () => {
+function hideGegeeMessage() {
+  gsap.to(gegeeOverlay, { background: 'rgba(26,18,9,0)', duration: 0.35, ease: 'power2.in' });
   gsap.to('#gegeeCard', {
     opacity: 0, scale: 0.9, y: -12,
     duration: 0.35, ease: 'power2.in',
     onComplete: () => gegeeOverlay.classList.remove('active'),
   });
-});
+}
+
+gegeeClose.addEventListener('click', hideGegeeMessage);
 gegeeOverlay.addEventListener('click', e => {
-  if (e.target === gegeeOverlay) gegeeClose.click();
+  if (e.target === gegeeOverlay) hideGegeeMessage();
 });
 
 // ─────────────────────────────────────────────
@@ -662,10 +669,6 @@ function displayFact(fact, keyword, length, num) {
   factText.classList.remove('loading', 'revealed');
   factText.innerHTML = highlightKeywords(fact, keyword);
   factText.classList.add('revealed');
-
-  const bubble = document.querySelector('.bubble');
-  const newH   = Math.max(110, factText.scrollHeight + 44);
-  gsap.to(bubble, { minHeight: newH, duration: 0.4, ease: 'power2.inOut' });
 
   tagLength.textContent = `${length} chars`;
   tagCount.textContent  = `#${num}`;
