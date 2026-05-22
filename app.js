@@ -12,6 +12,7 @@ const catWrap      = document.getElementById('catWrap');
 const petsVal      = document.getElementById('petsVal');
 const countVal     = document.getElementById('countVal');
 const moodVal      = document.getElementById('moodVal');
+const moodDecayBar = document.getElementById('moodDecayBar');
 const factText     = document.getElementById('factText');
 const tagLength    = document.getElementById('tagLength');
 const tagCount     = document.getElementById('tagCount');
@@ -21,6 +22,8 @@ const snoreMsg     = document.getElementById('snoreMsg');
 const achieveToast = document.getElementById('achievementToast');
 const nightToggle  = document.getElementById('nightToggle');
 const copyBtn      = document.getElementById('copyBtn');
+const backBtn      = document.getElementById('backBtn');
+const shareBtn     = document.getElementById('shareBtn');
 const favBtn       = document.getElementById('favBtn');
 const favThisBtn   = document.getElementById('favThisBtn');
 const favPanel     = document.getElementById('favPanel');
@@ -32,15 +35,32 @@ const tunaBtn      = document.getElementById('tunaBtn');
 const yarnBtn      = document.getElementById('yarnBtn');
 
 // ── State ──
-let petsCount    = 0;
-let factCount    = 0;
-let holdInterval = null;
-let currentFact  = '';
+let petsCount      = 0;
+let factCount      = 0;
+let holdInterval   = null;
+let currentFact    = '';
 let currentKeyword = null;
-let favourites   = [];
-let rapidPetTimer = null;
-let rapidCount   = 0;
-let isAnnoyed    = false;
+let favourites     = JSON.parse(localStorage.getItem('zif_favourites') || '[]');
+let rapidPetTimer  = null;
+let rapidCount     = 0;
+let isAnnoyed      = false;
+
+const MAX_HISTORY = 10;
+let factHistory  = [];
+let historyIndex = -1;
+
+// ── Achievements set — persisted ──
+const unlocked = new Set(JSON.parse(localStorage.getItem('zif_achievements') || '[]'));
+
+// ─────────────────────────────────────────────
+//  LOCAL STORAGE HELPERS
+// ─────────────────────────────────────────────
+function saveAchievements() {
+  localStorage.setItem('zif_achievements', JSON.stringify([...unlocked]));
+}
+function saveFavourites() {
+  localStorage.setItem('zif_favourites', JSON.stringify(favourites));
+}
 
 // Hide tuna + yarn on touch devices (media query won't catch desktop-view mobile)
 if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
@@ -101,12 +121,26 @@ const COMMENTS = {
     '…noted. now feed me.',
     'this changes nothing.',
     'you woke me up for THIS?',
+    '…are you done?',
+    'I was comfortable.',
+    'astounding. truly. no.',
+    'please don\'t make this a habit.',
+    '…okay then.',
+    'you could have just let me sleep.',
+    'information received. irrelevant.',
+    'fascinating. I have forgotten it already.',
   ],
   sleep: [
     'don\'t talk to me about sleep.',
     '…I was literally just doing that.',
     'relatable.',
     'impressive. I do this daily.',
+    'a worthy pursuit.',
+    '…leave me to it then.',
+    'I could write a thesis on this.',
+    'clearly the author has taste.',
+    'this is aspirational.',
+    '…remind me to nap again.',
   ],
   fish: [
     '🐟 ...excuse me?',
@@ -114,18 +148,36 @@ const COMMENTS = {
     'I require this immediately.',
     'you have my full attention.',
     'finally, a worthy fact.',
+    '…I\'m listening. tell me more.',
+    'absolutely vital information.',
+    'this is the content I\'m here for.',
+    'cancel everything. fish talk only.',
+    '…I felt something just now.',
+    'my ancestors would be proud.',
   ],
   hunt: [
     'rookie numbers.',
     'I could do better.',
     'naturally.',
     '…I respect this.',
+    'techniques I use personally.',
+    'some of us are born with instincts.',
+    'amateur. (respectfully.)',
+    'I peaked at age two.',
+    '…purely for sport, of course.',
+    'don\'t @ me, I\'m built different.',
   ],
   happy: [
     '...fine. this is acceptable.',
     'don\'t get used to it.',
     'I suppose.',
     '…whatever.',
+    'this almost makes me purr.',
+    'grudgingly… acknowledged.',
+    'okay. this one is okay.',
+    '…I didn\'t hate that.',
+    'you may stay. for now.',
+    '…fine. I\'m happy. are you happy? good.',
   ],
 };
 
@@ -169,10 +221,25 @@ function updateMood() {
   const mood = [...MOODS].reverse().find(m => petsCount >= m.min) || MOODS[0];
   setMoodEmoji(mood);
   clearTimeout(moodDecayTimer);
+
+  if (petsCount > 0) {
+    moodDecayBar.style.transition = 'none';
+    moodDecayBar.style.width = '100%';
+    moodDecayBar.style.opacity = '1';
+    void moodDecayBar.offsetWidth; // force reflow so transition restarts
+    moodDecayBar.style.transition = 'width 30s linear';
+    moodDecayBar.style.width = '0%';
+  } else {
+    moodDecayBar.style.transition = 'opacity 0.5s ease';
+    moodDecayBar.style.opacity = '0';
+  }
+
   moodDecayTimer = setTimeout(() => {
     petsCount = 0;
     petsVal.textContent = 0;
     setMoodEmoji(MOODS[0]);
+    moodDecayBar.style.transition = 'opacity 0.5s ease';
+    moodDecayBar.style.opacity = '0';
   }, 30000);
 }
 
@@ -193,11 +260,9 @@ const ACHIEVEMENTS = [
   { id: 'tuna',       icon: '🐟', name: 'Secret admirer', desc: 'Found the hidden tuna',         check: () => false            },
   { id: 'insomniac',  icon: '💤', name: 'Insomniac',      desc: 'Let cat fall into deep sleep',  check: () => false            },
   { id: 'fav_3',      icon: '⭐', name: 'Collector',      desc: 'Saved 3 favourite facts',       check: () => favourites.length >= 3 },
-  { id: 'yarn',        icon: '🧶', name: 'Cat instinct',    desc: 'Found the hidden yarn',         check: () => false },
-  { id: 'konami',      icon: '🕹️', name: 'Cheat code',      desc: 'Entered the Konami code',       check: () => false },
+  { id: 'yarn',        icon: '🧶', name: 'Cat instinct',   desc: 'Found the hidden yarn',         check: () => false },
+  { id: 'konami',      icon: '🕹️', name: 'Cheat code',    desc: 'Entered the Konami code',       check: () => false },
 ];
-
-const unlocked = new Set();
 
 function checkAchievements() {
   ACHIEVEMENTS.forEach(a => {
@@ -209,6 +274,7 @@ function triggerUnlock(id) {
   const a = ACHIEVEMENTS.find(x => x.id === id);
   if (!a || unlocked.has(id)) return;
   unlocked.add(id);
+  saveAchievements();
   showAchievementToast(a);
   renderAchievements();
   playUnlock();
@@ -263,6 +329,7 @@ function renderFavourites() {
     div.innerHTML = `${fact}<button class="fav-remove" data-i="${i}">✕ remove</button>`;
     div.querySelector('.fav-remove').addEventListener('click', () => {
       favourites.splice(i, 1);
+      saveFavourites();
       renderFavourites();
     });
     favList.appendChild(div);
@@ -280,6 +347,7 @@ favBtn.addEventListener('click', () => {
 favThisBtn.addEventListener('click', () => {
   if (!currentFact || favourites.includes(currentFact)) return;
   favourites.push(currentFact);
+  saveFavourites();
   favThisBtn.textContent = '⭐ saved!';
   favThisBtn.classList.add('saved');
   gsap.fromTo(favThisBtn, { scale: 1 }, { scale: 1.12, duration: 0.15, yoyo: true, repeat: 1, ease: 'back.out(2)' });
@@ -319,8 +387,9 @@ function exitSnore() {
 }
 
 snoreOverlay.addEventListener('click', exitSnore);
-document.addEventListener('keydown',   resetIdleTimer);
-document.addEventListener('mousemove', resetIdleTimer);
+document.addEventListener('keydown',    resetIdleTimer);
+document.addEventListener('mousemove',  resetIdleTimer);
+document.addEventListener('touchstart', resetIdleTimer, { passive: true });
 resetIdleTimer();
 
 // ─────────────────────────────────────────────
@@ -342,10 +411,8 @@ function triggerPet() {
     clearInterval(holdInterval);
     reactHiss();
     triggerUnlock('hissed');
-    // Annoyed commentary
     commentaryEl.textContent = '"ENOUGH."';
     gsap.fromTo(commentaryEl, { opacity: 0 }, { opacity: 1, duration: 0.3 });
-    // Cooldown 3s
     setTimeout(() => { isAnnoyed = false; }, 3000);
     return;
   }
@@ -379,7 +446,6 @@ function reactRareEvent(type) {
     reactToPet('sneeze');
     commentaryEl.textContent = '"...achoo."';
     gsap.fromTo(commentaryEl, { opacity: 0 }, { opacity: 1, duration: 0.3 });
-    // shake the whole card
     gsap.timeline()
       .to('.card', { x: -5, duration: 0.06 })
       .to('.card', { x: 5,  duration: 0.06 })
@@ -388,7 +454,6 @@ function reactRareEvent(type) {
   } else if (type === 'ignore') {
     commentaryEl.textContent = '"...zzz."';
     gsap.fromTo(commentaryEl, { opacity: 0 }, { opacity: 1, duration: 0.3 });
-    // cat just doesn't react — no animation
   }
 }
 
@@ -408,14 +473,12 @@ catWrap.addEventListener('touchcancel',() => clearInterval(holdInterval));
 // ─────────────────────────────────────────────
 //  HIDDEN TUNA BUTTON
 // ─────────────────────────────────────────────
-// Appears faintly after 5 pets, hover to see it
 tunaBtn.addEventListener('click', () => {
   reactTuna();
   playTuna();
   commentaryEl.textContent = '"...fine. I accept this offering."';
   gsap.fromTo(commentaryEl, { opacity: 0 }, { opacity: 1, duration: 0.4 });
   triggerUnlock('tuna');
-  // Burst of fish
   for (let i = 0; i < 6; i++) {
     spawnBurst(
       catWrap.getBoundingClientRect().left + catWrap.offsetWidth / 2 + (Math.random()-0.5)*80,
@@ -434,7 +497,6 @@ yarnBtn.addEventListener('click', () => {
   commentaryEl.textContent = '"...I suppose this is acceptable."';
   gsap.fromTo(commentaryEl, { opacity: 0 }, { opacity: 1, duration: 0.4 });
   triggerUnlock('yarn');
-  // Yarn burst
   for (let i = 0; i < 5; i++) {
     spawnBurst(
       catWrap.getBoundingClientRect().left + catWrap.offsetWidth / 2 + (Math.random()-0.5)*70,
@@ -460,7 +522,6 @@ document.addEventListener('keydown', e => {
       commentaryEl.textContent = '"...how did you know that."';
       gsap.fromTo(commentaryEl, { opacity: 0 }, { opacity: 1, duration: 0.4 });
       triggerUnlock('konami');
-      // Big burst all over screen
       for (let i = 0; i < 12; i++) {
         setTimeout(() => spawnBurst(
           Math.random() * window.innerWidth,
@@ -512,6 +573,42 @@ copyBtn.addEventListener('click', () => {
 });
 
 // ─────────────────────────────────────────────
+//  SHARE FACT
+// ─────────────────────────────────────────────
+shareBtn.addEventListener('click', () => {
+  if (!currentFact) return;
+  const shareText = `"${currentFact}"\n\n— via zif.my.id · catfact.ninja`;
+  if (navigator.share) {
+    navigator.share({ title: 'Cat Facts', text: shareText }).catch(() => {});
+  } else {
+    navigator.clipboard.writeText(shareText).then(() => {
+      shareBtn.textContent = '↗ copied!';
+      shareBtn.classList.add('copied');
+      gsap.fromTo(shareBtn, { scale: 1 }, { scale: 1.1, duration: 0.15, yoyo: true, repeat: 1, ease: 'back.out(2)' });
+      setTimeout(() => { shareBtn.textContent = '↗ share'; shareBtn.classList.remove('copied'); }, 2000);
+    });
+  }
+});
+
+// ─────────────────────────────────────────────
+//  HISTORY — back button
+// ─────────────────────────────────────────────
+function updateBackBtn() {
+  backBtn.disabled = historyIndex <= 0;
+  backBtn.style.opacity = historyIndex > 0 ? '1' : '0.3';
+}
+
+backBtn.addEventListener('click', () => {
+  if (historyIndex <= 0) return;
+  historyIndex--;
+  const item = factHistory[historyIndex];
+  factText.classList.remove('revealed');
+  factText.classList.add('loading');
+  setTimeout(() => displayFact(item.fact, item.keyword, item.length, item.num), 200);
+  updateBackBtn();
+});
+
+// ─────────────────────────────────────────────
 //  KEYWORD HIGHLIGHT
 // ─────────────────────────────────────────────
 function highlightKeywords(text, keyword) {
@@ -531,6 +628,44 @@ function highlightKeywords(text, keyword) {
 }
 
 // ─────────────────────────────────────────────
+//  DISPLAY FACT — shared by fetch and history nav
+// ─────────────────────────────────────────────
+function displayFact(fact, keyword, length, num) {
+  currentFact    = fact;
+  currentKeyword = keyword;
+
+  factText.classList.remove('loading', 'revealed');
+  factText.innerHTML = highlightKeywords(fact, keyword);
+  factText.classList.add('revealed');
+
+  const bubble = document.querySelector('.bubble');
+  const newH   = Math.max(110, factText.scrollHeight + 44);
+  gsap.to(bubble, { minHeight: newH, duration: 0.4, ease: 'power2.inOut' });
+
+  tagLength.textContent = `${length} chars`;
+  tagCount.textContent  = `#${num}`;
+
+  // Reflect saved state for this fact
+  const isFaved = favourites.includes(fact);
+  favThisBtn.textContent = isFaved ? '⭐ saved!' : '⭐ favourite';
+  favThisBtn.classList.toggle('saved', isFaved);
+
+  setTimeout(() => showCommentary(keyword), 600);
+  checkAchievements();
+
+  if (keyword && getCatState() === 'sleeping') {
+    setTimeout(() => reactToPet(keyword), 900);
+  }
+
+  if (petsCount >= 5 || keyword === 'fish') {
+    tunaBtn.classList.add('visible');
+    yarnBtn.classList.add('visible');
+  }
+
+  updateBackBtn();
+}
+
+// ─────────────────────────────────────────────
 //  FETCH FACT
 // ─────────────────────────────────────────────
 async function fetchFact() {
@@ -545,42 +680,18 @@ async function fetchFact() {
     const data = await res.json();
     await new Promise(r => setTimeout(r, 240));
 
-    currentFact    = data.fact;
-    currentKeyword = detectKeyword(data.fact);
-
-    factText.classList.remove('loading');
-    factText.innerHTML = highlightKeywords(data.fact, currentKeyword);
-    factText.classList.add('revealed');
-
-    // Smoothly animate bubble to new content height
-    const bubble = document.querySelector('.bubble');
-    const newH   = Math.max(110, factText.scrollHeight + 44);
-    gsap.to(bubble, { minHeight: newH, duration: 0.4, ease: 'power2.inOut' });
-
     factCount++;
-    tagLength.textContent = `${data.length} chars`;
-    tagCount.textContent  = `#${factCount}`;
-    countVal.textContent  = factCount;
+    countVal.textContent = factCount;
 
-    // Reset fav button
-    favThisBtn.textContent = '⭐ favourite';
-    favThisBtn.classList.remove('saved');
+    const keyword = detectKeyword(data.fact);
 
-    // Commentary from cat
-    setTimeout(() => showCommentary(currentKeyword), 600);
+    // Truncate any forward history, then push new item
+    factHistory = factHistory.slice(0, historyIndex + 1);
+    if (factHistory.length >= MAX_HISTORY) factHistory.shift();
+    factHistory.push({ fact: data.fact, keyword, length: data.length, num: factCount });
+    historyIndex = factHistory.length - 1;
 
-    checkAchievements();
-
-    // Cat reacts to keyword while sleeping
-    if (currentKeyword && getCatState() === 'sleeping') {
-      setTimeout(() => reactToPet(currentKeyword), 900);
-    }
-
-    // Reveal tuna + yarn buttons after 5 pets or fish fact
-    if (petsCount >= 5 || currentKeyword === 'fish') {
-      tunaBtn.classList.add('visible');
-      yarnBtn.classList.add('visible');
-    }
+    displayFact(data.fact, keyword, data.length, factCount);
 
   } catch {
     factText.classList.remove('loading');
@@ -634,6 +745,7 @@ document.addEventListener('click', e => {
 // ─────────────────────────────────────────────
 //  INIT
 // ─────────────────────────────────────────────
+updateBackBtn();
 catEvents.addEventListener('ready', () => fetchFact());
 renderAchievements();
 renderFavourites();
