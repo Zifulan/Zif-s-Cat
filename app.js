@@ -513,23 +513,9 @@ yarnBtn.addEventListener('click', () => {
 // ─────────────────────────────────────────────
 function showGegeeMessage() {
   gegeeOverlay.classList.add('active');
-  gsap.fromTo(gegeeOverlay,
-    { background: 'rgba(26,18,9,0)' },
-    { background: 'rgba(26,18,9,0.65)', duration: 0.6, ease: 'power2.out' }
-  );
-  gsap.fromTo('#gegeeCard',
-    { opacity: 0, scale: 0.88, y: 16 },
-    { opacity: 1, scale: 1, y: 0, duration: 0.55, delay: 0.5, ease: 'back.out(2)' }
-  );
 }
-
 function hideGegeeMessage() {
-  gsap.to(gegeeOverlay, { background: 'rgba(26,18,9,0)', duration: 0.35, ease: 'power2.in' });
-  gsap.to('#gegeeCard', {
-    opacity: 0, scale: 0.9, y: -12,
-    duration: 0.35, ease: 'power2.in',
-    onComplete: () => gegeeOverlay.classList.remove('active'),
-  });
+  gegeeOverlay.classList.remove('active');
 }
 
 gegeeClose.addEventListener('click', hideGegeeMessage);
