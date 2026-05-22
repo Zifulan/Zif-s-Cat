@@ -670,10 +670,6 @@ function displayFact(fact, keyword, length, num) {
   factText.innerHTML = highlightKeywords(fact, keyword);
   factText.classList.add('revealed');
 
-  const bubble = document.querySelector('.bubble');
-  const newH   = Math.max(110, factText.scrollHeight + 44);
-  gsap.to(bubble, { minHeight: newH, duration: 0.4, ease: 'power2.inOut' });
-
   tagLength.textContent = `${length} chars`;
   tagCount.textContent  = `#${num}`;
 
