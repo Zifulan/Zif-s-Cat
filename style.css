@@ -63,7 +63,7 @@ body.night .stat-lbl    { color: var(--night-muted); }
 body.night #stateBadge  { color: var(--night-muted); }
 body.night .pet-hint    { color: var(--night-muted); }
 body.night .fact-text   { color: #d4b896; }
-body.night .btn-copy    { color: var(--night-muted); border-color: var(--night-sand); }
+body.night .btn-copy, body.night .btn-back, body.night .btn-share { color: var(--night-muted); border-color: var(--night-sand); }
 body.night .fav-item    { border-color: var(--night-sand); background: var(--night-card); }
 body.night #favPanel    { border-color: var(--night-sand); }
 body.night #achievementsPanel { border-color: var(--night-sand); }
@@ -297,15 +297,18 @@ body.night .bubble-label::before, body.night .bubble-label::after { background: 
   display: flex; justify-content: space-between; align-items: center;
   margin-top: 8px;
 }
-.btn-copy, .btn-fav {
+.btn-copy, .btn-fav, .btn-back, .btn-share {
   font-family: 'Gaegu', cursive; font-size: 11px; letter-spacing: 0.12em;
   text-transform: uppercase; color: var(--muted);
   background: none; border: 1px solid var(--sand); border-radius: 999px;
   padding: 3px 12px; cursor: pointer;
-  transition: color 0.2s, border-color 0.2s;
+  transition: color 0.2s, border-color 0.2s, opacity 0.3s;
 }
-.btn-copy:hover, .btn-fav:hover { color: var(--amber); border-color: var(--amber); }
-.btn-copy.copied, .btn-fav.saved { color: var(--amber); border-color: var(--amber); }
+.btn-copy:hover, .btn-fav:hover, .btn-back:hover:not(:disabled), .btn-share:hover {
+  color: var(--amber); border-color: var(--amber);
+}
+.btn-copy.copied, .btn-fav.saved, .btn-share.copied { color: var(--amber); border-color: var(--amber); }
+.btn-back:disabled { cursor: default; }
 
 .fact-keyword { color: var(--amber); font-weight: 700; }
 
@@ -377,6 +380,13 @@ body.night .bubble-label::before, body.night .bubble-label::after { background: 
   font-family: 'Gaegu', cursive; font-size: 11px;
   text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-top: 2px;
   transition: color 1.2s ease;
+}
+
+/* Mood decay bar */
+.mood-decay-bar {
+  height: 2px; width: 0%; margin: 5px auto 0;
+  background: var(--amber); border-radius: 999px;
+  opacity: 0; max-width: 48px;
 }
 
 /* ── Favourites panel ── */
@@ -495,8 +505,8 @@ body.night .bubble-label::before, body.night .bubble-label::after { background: 
   .bubble-label { margin-bottom: 10px; font-size: 10px; }
 
   /* Bubble actions row */
-  .bubble-actions { flex-direction: row; gap: 6px; }
-  .btn-copy, .btn-fav { font-size: 10px; padding: 2px 10px; }
+  .bubble-actions { flex-direction: row; flex-wrap: wrap; gap: 5px; justify-content: center; }
+  .btn-copy, .btn-fav, .btn-back, .btn-share { font-size: 10px; padding: 2px 8px; }
 
   /* Meta row */
   .meta-row { margin-bottom: 16px; font-size: 10px; }
